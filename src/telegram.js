@@ -20,6 +20,7 @@ import { engagementCallback } from './engagement.js';
 import { ratesHome, ratesCallback } from './rates.js';
 import { newsHome, newsCallback } from './news.js';
 import { adminCallback, adminFlow, adminHome, isAdminUser } from './admin-bot.js';
+import { arcadiaMessage, arcadiaCallback } from './arcadia.js';
 export { renderPollText, pollKeyboard, sendPollToChat, reactMarkup } from './engagement.js';
 
 const BOT_T = {
@@ -344,6 +345,7 @@ async function onMessage(env, msg, token, settings) {
   const menu = await getMenu(env);
   if (cmd === '/cancel' || cmd === '/end') { user.flow = null; user.supportOpen = false; await putUser(env, user); return sendToUser(token, chatId, T.supportClosed); }
   try {
+    if (await arcadiaMessage(env, token, user, settings, lang, msg)) return;
     if (await adminFlow(env, token, user, settings, lang, msg)) return;
     if (await serviceMessage(env, user, lang, msg)) return;
     if (!cmd && await commerceMessage(env, token, user, settings, lang, msg)) return;
@@ -423,6 +425,7 @@ async function handleCallback(env, cb, token, settings) {
   const data = String(cb.data || ''), chatId = cb.message?.chat.id, messageId = cb.message?.message_id;
   const answer = (text = '', alert = false) => tgApi(token, 'answerCallbackQuery', { callback_query_id: cb.id, text, show_alert: alert });
   if (user.banned || !chatId) return answer();
+  try { if (await arcadiaCallback(env, token, user, settings, cb, { adminOnly: true })) return; } catch (e) { return answer(str(e.message || 'error', 120), true); }
   if (data.startsWith('chan:check:') && data.slice(11) !== String(user.id)) return answer(tr('این دکمه برای شما نیست.', 'This button belongs to another user.', lang), true);
   // Admin controls run before the membership gate: the administrator must always
   // be able to approve/reject relay publishing and manage the bot from Telegram.
@@ -441,6 +444,7 @@ async function handleCallback(env, cb, token, settings) {
     return;
   }
   if (Number(chatId) < 0) return answer(tr('این بخش را در گفتگوی خصوصی ربات باز کنید.', 'Open this feature in a private chat with the bot.', lang), true);
+  try { if (await arcadiaCallback(env, token, user, settings, cb)) return; } catch (e) { return answer(str(e.message || 'error', 120), true); }
   const menu = await getMenu(env);
   try {
     if (await serviceCallback(env, user, lang, data)) return answer();
