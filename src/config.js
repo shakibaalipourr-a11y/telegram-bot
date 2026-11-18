@@ -2,6 +2,7 @@ export const MODULES = ['catalog', 'shop', 'channel', 'moderation', 'relay', 'cr
 
 export const PURPOSES = {
   vpn: { fa: 'فروش و مدیریت سرویس VPN', en: 'VPN services & customer portal', icon: 'network', modules: ['services', 'crm', 'broadcast', 'support', 'menu'], desc: 'مینی‌اپ، پنل‌های VPN، کیف پول، نمایندگی و انبار کانفیگ' },
+  arcadia: { fa: 'پذیرش آکادمی آرکادیا', en: 'Arcadia Hogwarts admissions', icon: 'castle', modules: ['support'], desc: 'ثبت داوطلبان، آزمون شخصیت‌شناسی چهار گروه هاگوارتز، پرونده پاسخ‌ها و تأیید نهایی مدیران' },
   custom: { fa: 'پیش‌فرض / سفارشی', en: 'Custom workspace', icon: 'sliders-horizontal', modules: MODULES, desc: 'همه ابزارها؛ انتخاب و شخصی‌سازی آزاد' },
   channel: { fa: 'مدیریت کانال', en: 'Channel manager', icon: 'radio', modules: ['catalog', 'channel', 'moderation', 'crm', 'broadcast', 'support', 'menu'], desc: 'انتشار، زمان‌بندی، محصولات، دسته‌بندی و تعامل' },
   shop: { fa: 'فروشگاه', en: 'Store', icon: 'shopping-bag', modules: ['catalog', 'shop', 'crm', 'broadcast', 'support', 'menu'], desc: 'محصول، سبد خرید، پرداخت، سفارش، رهگیری و تحویل' },
