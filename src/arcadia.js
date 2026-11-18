@@ -150,7 +150,7 @@ async function begin(env, token, user) {
   return showQuestion(env, token, user, app.answers.length, app);
 }
 
-async function chooseAnswer(env, token, user, index, option) {
+async function chooseAnswer(env, token, user, settings, index, option) {
   const app = await getJson(env, appKey(user.id), null);
   if (!app || app.status !== 'in_progress' || index !== app.answers.length) return sendToUser(token, user.id, 'این مرحله دیگر فعال نیست. از منوی آرکادیا آزمون را ادامه دهید.');
   const question = QUESTIONS[index], answer = question?.a[option];
@@ -160,7 +160,7 @@ async function chooseAnswer(env, token, user, index, option) {
   app.updatedAt = Date.now();
   await putJson(env, appKey(user.id), app);
   await recordEvent(env, user, 'quiz_answer', { questionIndex: index, optionIndex: option, house: answer[1] });
-  return index + 1 >= QUESTIONS.length ? finishApplication(env, token, user, app, {}) : showQuestion(env, token, user, index + 1, app);
+  return index + 1 >= QUESTIONS.length ? finishApplication(env, token, user, app, settings) : showQuestion(env, token, user, index + 1, app);
 }
 
 async function finishApplication(env, token, user, app, settings = {}) {
@@ -289,7 +289,7 @@ export async function arcadiaCallback(env, token, user, settings, cb, { adminOnl
     await home(env, token, user);
   } else if (data.startsWith('arc:q:')) {
     const [, , q, a] = data.split(':');
-    await chooseAnswer(env, token, user, Number(q), Number(a));
+    await chooseAnswer(env, token, user, settings, Number(q), Number(a));
   } else { await answer('گزینه نامعتبر است.', true); return true; }
   await answer();
   return true;
