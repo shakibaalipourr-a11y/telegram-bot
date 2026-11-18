@@ -2,7 +2,7 @@ import { getJson, putJson } from './kv.js';
 import { entityKey, allEntities } from './storage.js';
 import { sendToUser, tgApi } from './bot-api.js';
 
-const PREFIX = 'arcadia:application:';
+const appKey = (id) => entityKey('arcadia:application', String(id));
 const EVENT_PREFIX = 'arcadia:event:';
 const HOUSES = {
   gryffindor: 'گریفیندور',
@@ -15,7 +15,7 @@ const QUESTIONS = [
     ['به‌سوی صدا می‌روم؛ شاید کسی به کمک نیاز داشته باشد.', 'gryffindor'],
     ['اول اطراف را بررسی می‌کنم و بعد تصمیم می‌گیرم.', 'ravenclaw'],
     ['راهی پیدا می‌کنم که بدون جلب توجه حقیقت را بفهمم.', 'slytherin'],
-    ['مطمئن می‌شوم هیچ‌کس置置置 تنها یا در خطر نمانده باشد.', 'hufflepuff'],
+    ['مطمئن می‌شوم هیچ‌کس تنها یا در خطر نمانده باشد.', 'hufflepuff'],
   ]},
   { q: 'کدام ویژگی را در یک دوست ارزشمندتر می‌دانی؟', a: [
     ['شجاعت و ایستادگی در لحظه‌های سخت.', 'gryffindor'],
@@ -89,7 +89,6 @@ const isAdmin = (env, settings, user) =>
   !!user && ((settings.adminId && String(user.id) === String(settings.adminId)) ||
     (env.ADMIN_ID && String(user.id) === String(env.ADMIN_ID)));
 
-const appKey = (id) => PREFIX + String(id);
 const eventKey = (id, stamp) => EVENT_PREFIX + String(id) + ':' + String(stamp);
 
 async function recordEvent(env, user, type, details = {}) {
@@ -124,7 +123,7 @@ async function home(env, token, user) {
 
 async function showQuestion(env, token, user, index, app) {
   const q = QUESTIONS[index];
-  if (!q) return finishApplication(env, token, user, app);
+  if (!q) return finishApplication(env, token, user, app, {});
   const rows = q.a.map((answer, i) => [{ text: answer[0], callback_data: 'arc:q:' + index + ':' + i }]);
   rows.push([{ text: '⏸ ذخیره و خروج', callback_data: 'arc:pause' }]);
   return sendToUser(token, user.id,
@@ -161,10 +160,10 @@ async function chooseAnswer(env, token, user, index, option) {
   app.updatedAt = Date.now();
   await putJson(env, appKey(user.id), app);
   await recordEvent(env, user, 'quiz_answer', { questionIndex: index, optionIndex: option, house: answer[1] });
-  return index + 1 >= QUESTIONS.length ? finishApplication(env, token, user, app) : showQuestion(env, token, user, index + 1, app);
+  return index + 1 >= QUESTIONS.length ? finishApplication(env, token, user, app, {}) : showQuestion(env, token, user, index + 1, app);
 }
 
-async function finishApplication(env, token, user, app) {
+async function finishApplication(env, token, user, app, settings = {}) {
   const ranked = Object.entries(app.scores || {}).sort((a, b) => b[1] - a[1] || ['gryffindor','slytherin','ravenclaw','hufflepuff'].indexOf(a[0]) - ['gryffindor','slytherin','ravenclaw','hufflepuff'].indexOf(b[0]));
   app.suggestedHouse = ranked[0]?.[0] || '';
   app.status = 'pending_review';
@@ -177,7 +176,7 @@ async function finishApplication(env, token, user, app) {
     'گروه پیشنهادی آزمون: ' + (HOUSES[app.suggestedHouse] || 'نامشخص') + '\n' +
     'نتیجهٔ نهایی پس از بررسی مدیران اعلام می‌شود.\n\n' +
     'شناسهٔ درخواست: ' + user.id);
-  const adminId = settingsAdminId(env);
+  const adminId = settings.adminId || settingsAdminId(env);
   if (adminId) await sendToUser(token, adminId,
     '🔔 درخواست پذیرش جدید آرکادیا\n\n' + displayName(user) + '\nشناسه: ' + user.id +
     '\nگروه پیشنهادی: ' + (HOUSES[app.suggestedHouse] || 'نامشخص') +
